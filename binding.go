@@ -7,7 +7,14 @@ import (
 	"strconv"
 )
 
-func getConnRAddress(conn net.Conn) (net.IP, int) {
+func getConnRAddress(conn net.Conn) (ip net.IP, port int) {
+	var copying = func () {
+		buff := make([]byte, len(ip))
+		copy(buff, ip)
+		ip = buff
+	}
+	defer copying() // Copy to avoid modify errors
+
 	switch conn.(type) {
 	case *net.TCPConn:
 		return conn.RemoteAddr().(*net.TCPAddr).IP,
@@ -15,7 +22,7 @@ func getConnRAddress(conn net.Conn) (net.IP, int) {
 	case *tls.Conn:
 		return conn.RemoteAddr().(*net.TCPAddr).IP,
 			conn.RemoteAddr().(*net.TCPAddr).Port
-	case *net.UDPConn:
+	case *StunUDP:
 		return conn.RemoteAddr().(*net.UDPAddr).IP,
 			conn.RemoteAddr().(*net.UDPAddr).Port
 	default:
@@ -32,7 +39,7 @@ func getConnLAddress(conn net.Conn) (net.IP, int) {
 	case *tls.Conn:
 		return conn.LocalAddr().(*net.TCPAddr).IP,
 			conn.LocalAddr().(*net.TCPAddr).Port
-	case *net.UDPConn:
+	case *StunUDP:
 		return conn.LocalAddr().(*net.UDPAddr).IP,
 			conn.LocalAddr().(*net.UDPAddr).Port
 	default:
@@ -78,7 +85,7 @@ func BindingHandler(ctx *StunMsgCtx, conn net.Conn, msg *StunMsg) bool {
     */
 
 	cr := msg.PeekAttr(STUN_ATTR_CHANGE_REQ)
-	if udpConn, ok := conn.(*net.UDPConn); cr != nil && ok {
+	if udpConn, ok := conn.(*StunUDP); cr != nil && ok {
 		// Use communication TCP to indicate alternate server
 		// to response with alternate IP
 		if cr.AttrValue.(*ChangeRequest).IP {
@@ -111,7 +118,8 @@ func BindingHandler(ctx *StunMsgCtx, conn net.Conn, msg *StunMsg) bool {
 		// Server can response an other address
 		ip := make(net.IP, 4)
 		for i := 0; i < 4; i++ {
-			ip[i] = uint8(strconv.Atoi(alterIP[i]))
+			n, _ := strconv.Atoi(alterIP[i])
+			ip[i] = uint8(n)
 		}
 		rmsg.AddAttr(NewStunAttr(STUN_ATTR_OTHER_ADDR,
 			NewStunAddr(ip, *FlagAlternatePort)))
@@ -122,9 +130,10 @@ func BindingHandler(ctx *StunMsgCtx, conn net.Conn, msg *StunMsg) bool {
 	rmsg.AddAttr(NewStunAttr(STUN_ATTR_SOFTWARE,
 		SOFTWARE))
 	if data, err := rmsg.Encode(nil, ctx.key, ctx.fp, PADDING_BYTE); err != nil {
-		conn.Write(data)
-	} else {
 		return false
+	} else {
+		debug(data)
+		conn.Write(data)
 	}
 	return true
 }

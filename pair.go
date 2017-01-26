@@ -17,17 +17,17 @@ import (
 )
 
 var (
-	FlagAlternate = flag.Bool("A", true,
+	FlagAlternate = flag.Bool("A", false,
 	"if this flag exist, the server run as a alternate server")
-	FlagIP = flag.String("-ip", "1.2.3.4",
+	FlagIP = flag.String("-ip", "192.168.1.113",
 	"the ip address of the primary server")
 	FlagPort = flag.Int("-port", 3478,
 	"the primary port for primay server")
-	FlagAlternateIP = flag.String("-alterip", "5.6.7.8",
+	FlagAlternateIP = flag.String("-alterip", "192.168.1.114",
 	"the ip address of the alternate server")
 	FlagAlternatePort = flag.Int("-alterport", 3479,
 	"the alternate port")
-	FlagCommunicateIP = flag.String("-commip", "192.168.1.100",
+	FlagCommunicateIP = flag.String("-commip", "192.168.1.113",
 	"the primary ip for communication, LAN IP recommended")
 	FlagCommunicatePort = flag.Int("-commport", 1346,
 	"the port for primay and alternate to communicate\n" +

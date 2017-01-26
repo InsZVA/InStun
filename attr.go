@@ -318,7 +318,7 @@ func NewStunAttr(attrType uint16, v interface{}) *StunAttr {
 	case uint16:
 	case uint32:
 	case uint64:
-	case *StunAttr:
+	case *StunAddr:
 	case *ChangeRequest:
 	case string:
 	case []byte:
@@ -328,6 +328,7 @@ func NewStunAttr(attrType uint16, v interface{}) *StunAttr {
 	case nil:
 		return nil
 	default:
+		debug(v)
 		panic("InStun: try a incompatible type.")
 	}
 	return &StunAttr {
@@ -362,7 +363,7 @@ func (attr *StunAttr) Encode(tid []uint8, paddingByte uint8) (ret []byte, err er
 	case STUN_ATTR_XOR_RELAY_ADDR: fallthrough
 	case STUN_ATTR_XOR_MAPPED_ADDR:
 		addr := attr.AttrValue.(*StunAddr)
-		if buff, err := addr.Encode(tid); err != nil {
+		if buff, err := addr.Encode(tid); err == nil {
 			binary.BigEndian.PutUint16(buf[2:], uint16(len(buff)))
 			return append(buf, buff...), nil
 		} else {

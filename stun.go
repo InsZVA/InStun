@@ -3,7 +3,7 @@ package instun
 import (
 	"errors"
 	"net"
-	"bytes"
+	"time"
 )
 
 var (
@@ -45,10 +45,14 @@ func (stun *Stun) Run(listener net.Listener) error {
 	}
 }
 
-func (stun *Stun) RunUDP(conn *net.UDPConn) error {
+func (stun *Stun) RunUDP(listener *net.UDPConn) error {
 	data := make([]byte, 1024)
 	for {
-		if n, e := conn.Read(data); n > 20 && e == nil {
+		if n, addr, e := listener.ReadFromUDP(data); n > 20 && e == nil {
+			conn := &StunUDP{
+				conn: listener,
+				raddr: addr,
+			}
 			ctx := &StunMsgCtx{}
 			reader := NewStunReaderFromBytes(data[:n])
 			msg, err := DecodeStunMsg(reader, &ctx.ua)
@@ -60,3 +64,42 @@ func (stun *Stun) RunUDP(conn *net.UDPConn) error {
 		}
 	}
 }
+
+type StunUDP struct {
+	conn *net.UDPConn
+	raddr *net.UDPAddr
+}
+
+func (udp *StunUDP) Write(b []byte) (int, error) {
+	return udp.conn.WriteTo(b, udp.raddr)
+}
+
+func (udp *StunUDP) Read(b []byte) (int, error) {
+	return 0, nil
+}
+
+
+func (udp *StunUDP) Close() error {
+	return nil
+}
+
+func (udp *StunUDP) LocalAddr() net.Addr {
+	return udp.conn.LocalAddr()
+}
+
+func (udp *StunUDP) RemoteAddr() net.Addr {
+	return udp.raddr
+}
+
+func (udp *StunUDP) SetDeadline(t time.Time) error {
+	return udp.SetDeadline(t)
+}
+
+func (udp *StunUDP) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (udp *StunUDP) SetWriteDeadline(t time.Time) error {
+	return udp.conn.SetWriteDeadline(t)
+}
+

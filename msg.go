@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/json"
 )
 
 const (
@@ -31,8 +32,9 @@ type StunMsg struct {
 	Reader	*StunReader
 }
 
-func (msg *StunMsg) String() {
-
+func (msg *StunMsg) String() string {
+	data, _ := json.Marshal(*msg)
+	return string(data)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +233,7 @@ func (msg *StunMsg) Encode(ec *ErrorCode, key []uint8, fingerprint bool,
 		body = append(body, buff...)
 	}
 
-	if !fingerprint {
+	if fingerprint {
 		var fprnt uint32
 		msg.MsgLen += FP_SIZE
 		fprnt = fingerPrint(append(msg.EncodeHeader(), body...))

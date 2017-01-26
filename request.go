@@ -15,10 +15,10 @@ const (
 
 )
 
-func requestHandler(ctx *StunMsgCtx, conn net.Conn, src *StunAddr, dst *StunAddr, msg *StunMsg) bool {
+func requestHandler(ctx *StunMsgCtx, conn net.Conn, msg *StunMsg) bool {
 	switch msg.Method() {
 	case STUN_METHOD_BINDING:
-		return BindingHandler(ctx, conn, src, dst, msg)
+		return BindingHandler(ctx, conn, msg)
 	}
 	return false
 }
